@@ -80,7 +80,8 @@ class ChartDatabase:
                    figure_json: str, chart_config: Optional[Dict] = None,
                    user_prompt: Optional[str] = None, 
                    metadata: Optional[Dict] = None,
-                   tags: Optional[List[str]] = None) -> int:
+                   tags: Optional[List[str]] = None,
+                   category: Optional[str] = None) -> int:
         """
         Save a chart to the database
         
@@ -92,6 +93,7 @@ class ChartDatabase:
             user_prompt: Original user prompt
             metadata: Additional metadata
             tags: List of tags for categorization
+            category: Chart category
         
         Returns:
             Chart ID
@@ -99,26 +101,83 @@ class ChartDatabase:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
+        # Check if chart already exists
         cursor.execute('''
-            INSERT INTO charts (chart_name, chart_type, user_prompt, chart_config, 
-                              figure_json, metadata, tags)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            chart_name,
-            chart_type,
-            user_prompt,
-            json.dumps(chart_config) if chart_config else None,
-            figure_json,
-            json.dumps(metadata) if metadata else None,
-            json.dumps(tags) if tags else None
-        ))
+            SELECT id FROM charts 
+            WHERE chart_name = ? AND category = ?
+        ''', (chart_name, category or 'Custom Analysis'))
         
-        chart_id = cursor.lastrowid
+        existing = cursor.fetchone()
+        
+        if existing:
+            # Update existing chart
+            chart_id = existing[0]
+            cursor.execute('''
+                UPDATE charts SET chart_type = ?, user_prompt = ?, chart_config = ?,
+                                figure_json = ?, metadata = ?, tags = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            ''', (
+                chart_type,
+                user_prompt,
+                json.dumps(chart_config) if chart_config else None,
+                figure_json,
+                json.dumps(metadata) if metadata else None,
+                json.dumps(tags) if tags else None,
+                chart_id
+            ))
+        else:
+            # Insert new chart
+            cursor.execute('''
+                INSERT INTO charts (chart_name, chart_type, category, user_prompt, chart_config, 
+                                  figure_json, metadata, tags, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            ''', (
+                chart_name,
+                chart_type,
+                category or 'Custom Analysis',
+                user_prompt,
+                json.dumps(chart_config) if chart_config else None,
+                figure_json,
+                json.dumps(metadata) if metadata else None,
+                json.dumps(tags) if tags else None
+            ))
+            chart_id = cursor.lastrowid
+        
         conn.commit()
         conn.close()
         
         return chart_id
     
+    def get_chart_by_name_category(self, chart_name: str, category: str) -> Optional[Dict]:
+        """Retrieve a chart by name and category"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT id, chart_name, chart_type, created_at, updated_at,
+                   user_prompt, chart_config, figure_json, metadata, tags
+            FROM charts
+            WHERE chart_name = ? AND category = ?
+        ''', (chart_name, category))
+        
+        row = cursor.fetchone()
+        conn.close()
+        
+        if row:
+            return {
+                'id': row[0],
+                'chart_name': row[1],
+                'chart_type': row[2],
+                'created_at': row[3],
+                'updated_at': row[4],
+                'user_prompt': row[5],
+                'chart_config': json.loads(row[6]) if row[6] else None,
+                'figure_json': row[7],
+                'metadata': json.loads(row[8]) if row[8] else None,
+                'tags': json.loads(row[9]) if row[9] else None
+            }
+        return None
+
     def get_chart(self, chart_id: int) -> Optional[Dict]:
         """Retrieve a chart by ID"""
         conn = sqlite3.connect(self.db_path)
@@ -148,6 +207,43 @@ class ChartDatabase:
                 'tags': json.loads(row[9]) if row[9] else None
             }
         return None
+    
+    def get_saved_charts(self, chart_type_filter: Optional[str] = None, limit: int = 100) -> List[Dict]:
+        """Get saved charts with optional type filtering"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        if chart_type_filter:
+            cursor.execute('''
+                SELECT id, chart_name, chart_type, created_at, user_prompt, chart_config
+                FROM charts
+                WHERE chart_type LIKE ?
+                ORDER BY created_at DESC
+                LIMIT ?
+            ''', (f'%{chart_type_filter}%', limit))
+        else:
+            cursor.execute('''
+                SELECT id, chart_name, chart_type, created_at, user_prompt, chart_config
+                FROM charts
+                ORDER BY created_at DESC
+                LIMIT ?
+            ''', (limit,))
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        charts = []
+        for row in rows:
+            charts.append({
+                'id': row[0],
+                'chart_name': row[1],
+                'chart_type': row[2],
+                'created_at': row[3],
+                'user_prompt': row[4],
+                'chart_config': row[5]
+            })
+        
+        return charts
     
     def list_charts(self, chart_type: Optional[str] = None, 
                    limit: int = 100, offset: int = 0) -> List[Dict]:

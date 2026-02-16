@@ -38,7 +38,7 @@ db = get_database()
 
 # Page configuration
 st.set_page_config(
-    page_title="Economic Chart Assistant - Combined",
+    page_title="Economic Chart Assistant - Enhanced",
     page_icon="📊",
     layout="wide"
 )
@@ -163,185 +163,24 @@ def generate_chart_image_context(figure, chart_config, prompt, data):
         return None
 
 # Sidebar
-st.sidebar.title("📊 Economic Chart Assistant")
-st.sidebar.markdown("---")
+st.sidebar.title("📊 Chart Assistant")
 
-# Data Analysis section
-st.sidebar.markdown("### 📊 Data Analysis")
-
-if st.sidebar.button("📁 Upload Data & Create Chart", key="nav_upload"):
+if st.sidebar.button("📁 Upload Data", key="nav_upload", use_container_width=True):
     st.session_state.page = "upload"
     st.rerun()
 
-if st.sidebar.button("🖼️ Upload Image & Data", key="nav_image_upload"):
+if st.sidebar.button("🖼️ Image Analysis", key="nav_image_upload", use_container_width=True):
     st.session_state.page = "image_upload"
     st.rerun()
 
+# Saved Charts section
 st.sidebar.markdown("---")
-
-# Filters
-st.sidebar.markdown("### 🔍 Filters")
-
-# Get saved reports from database
-try:
-    all_charts = db.list_charts(limit=1000)
-    saved_reports = [c for c in all_charts if c and c.get('category')]
-    report_categories = set()
-    for report in saved_reports:
-        category = report.get('category', 'Custom Analysis')
-        report_categories.add(category)
-except Exception as e:
-    report_categories = set()
-    st.sidebar.error(f"DB Error: {str(e)[:50]}")
-
-# Category filter - load from database
-try:
-    all_charts = db.list_charts(limit=1000)
-    db_categories = set()
-    for chart in all_charts:
-        if chart and chart.get('category'):
-            db_categories.add(chart['category'])
-except:
-    db_categories = set()
-
-# Build categories dict from database
-categories = {}
-for category in sorted(db_categories):
-    categories[f"📊 {category}"] = []
-
-# Add hardcoded categories only if no database categories found
-if not categories:
-    categories = {
-        "PCE Inflation": [k for k in CHART_REGISTRY.keys() if k.startswith('01') or k.startswith('02')],
-        "PCE Components": [k for k in CHART_REGISTRY.keys() if k.startswith('03')],
-        "Timing Analysis": [k for k in CHART_REGISTRY.keys() if k.startswith('04')],
-        "Decomposition": [k for k in CHART_REGISTRY.keys() if k.startswith('05')],
-        "Supply/Demand": [k for k in CHART_REGISTRY.keys() if k.startswith('fig7')]
-    }
-else:
-    # Add chart registry categories alongside database categories
-    categories.update({
-        "PCE Inflation": [k for k in CHART_REGISTRY.keys() if k.startswith('01') or k.startswith('02')],
-        "PCE Components": [k for k in CHART_REGISTRY.keys() if k.startswith('03')],
-        "Timing Analysis": [k for k in CHART_REGISTRY.keys() if k.startswith('04')],
-        "Decomposition": [k for k in CHART_REGISTRY.keys() if k.startswith('05')],
-        "Supply/Demand": [k for k in CHART_REGISTRY.keys() if k.startswith('fig7')]
-    })
-
-selected_category = st.sidebar.selectbox(
-    "Category",
-    list(categories.keys()),
-    key="category_filter"
-)
-
-# Chart filter within category
-available_charts = categories[selected_category]
-
-# Add saved reports for selected category
-if selected_category.startswith("📊"):
-    category_name = selected_category.replace("📊 ", "")
-    try:
-        all_charts = db.list_charts(limit=1000)
-        for chart in all_charts:
-            if chart and chart.get('category') == category_name:
-                chart_name = chart.get('chart_name', f"Chart_{chart['id']}")
-                available_charts.append(f"saved_{chart['id']}_{chart_name}")
-    except Exception as e:
-        st.sidebar.error(f"Load Error: {str(e)[:30]}")
-
-selected_chart = st.sidebar.selectbox(
-    "Chart",
-    available_charts,
-    key="chart_filter"
-)
-
-# Chart type filter
-chart_types = ["Line", "Bar", "Pie", "Stacked Bar", "Area", "Scatter", "Heatmap"]
-selected_chart_type = st.sidebar.selectbox(
-    "Chart Type",
-    chart_types,
-    key="chart_type_filter"
-)
-
-# Date range
-st.sidebar.markdown("### 📅 Date Range")
-try:
-    pce_df = pd.read_csv("charting_assistant/test_pce_data.csv")
-    pce_df['date'] = pd.to_datetime(pce_df['date'])
-    min_date = pce_df['date'].min().date()
-    max_date = pce_df['date'].max().date()
-except:
-    min_date = pd.Timestamp('2020-01-01').date()
-    max_date = pd.Timestamp.now().date()
-
-start_date = st.sidebar.date_input("Start Date", value=min_date, key="start_filter")
-end_date = st.sidebar.date_input("End Date", value=max_date, key="end_filter")
-
-if st.sidebar.button("🚀 Generate Chart", type="primary", key="gen_selected"):
-    with st.spinner(f"Generating {selected_chart}..."):
-        try:
-            # Check if it's a saved report
-            if selected_chart.startswith("saved_"):
-                # Extract report ID
-                parts = selected_chart.split("_")
-                report_id = int(parts[1])
-                
-                # Load saved report
-                saved_chart = db.get_chart(report_id)
-                if saved_chart:
-                    import json
-                    fig_json = saved_chart['figure_json']
-                    fig = go.Figure(json.loads(fig_json))
-                    
-                    config = saved_chart.get('chart_config', {})
-                    if isinstance(config, str):
-                        config = json.loads(config)
-                    
-                    st.session_state.current_chart = {
-                        'name': config.get('report_name', f"Saved Report {report_id}"),
-                        'figure': fig,
-                        'category': config.get('report_category', 'Custom Analysis'),
-                        'chart_type': 'saved_report',
-                        'id': report_id
-                    }
-                else:
-                    st.sidebar.error("Report not found")
-            else:
-                # Generate predefined chart
-                fig = generate_chart(selected_chart, "charting_assistant/test_pce_data.csv", "charting_assistant/test_supply_demand_data.csv")
-                st.session_state.current_chart = {
-                    'name': selected_chart,
-                    'figure': fig,
-                    'category': selected_category,
-                    'chart_type': selected_chart_type,
-                    'date_range': [start_date, end_date]
-                }
-            
-            # Clear other states and navigate to main
-            if 'current_upload_chart' in st.session_state:
-                del st.session_state.current_upload_chart
-            if 'uploaded_image' in st.session_state:
-                del st.session_state.uploaded_image
-            if 'uploaded_data' in st.session_state:
-                del st.session_state.uploaded_data
-            st.session_state.page = "main"
-            st.rerun()
-        except Exception as e:
-            st.sidebar.error(f"Error: {str(e)}")
+if st.sidebar.button("💾 Saved Charts", key="nav_saved", use_container_width=True):
+    st.session_state.page = "saved"
+    st.rerun()
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("### Settings")
-llm_provider = st.sidebar.selectbox(
-    "LLM Provider",
-    ["AWS Bedrock", "OpenAI", "Anthropic"]
-)
-
-# Debug: Show saved charts count
-try:
-    all_charts = db.list_charts(limit=1000)
-    st.sidebar.info(f"📊 Total: {len(all_charts)} charts")
-except Exception as e:
-    st.sidebar.error(f"DB Error: {str(e)}")
+llm_provider = st.sidebar.selectbox("LLM", ["AWS Bedrock", "OpenAI", "Anthropic"], label_visibility="collapsed")
 
 # Main content
 st.title("📈 Economic Research Chart Assistant")
@@ -521,120 +360,231 @@ if page == "upload":
             st.markdown("---")
             st.markdown("### 🔧 Manual Chart Creation")
             
+            # FRED-style customization tabs
+            tab1, tab2, tab3, tab4 = st.tabs(["📊 Data", "🎨 Appearance", "📏 Axes", "🔧 Advanced"])
+            
             # Column selection
             df = st.session_state.data
             
-            # Column selection for chart
-            col1_sel, col2_sel = st.columns(2)
-            
-            with col1_sel:
-                # Check if data has series identifier column (like 'variable')
-                has_series_col = any(col.lower() in ['variable', 'series', 'category', 'component'] for col in df.columns)
+            with tab1:
+                # Column selection for chart
+                col1_sel, col2_sel = st.columns(2)
                 
-                if has_series_col:
-                    st.markdown("**📊 Data Format Detected: Long Format**")
-                    series_col = st.selectbox(
-                        "Series Identifier Column",
-                        [col for col in df.columns if col.lower() in ['variable', 'series', 'category', 'component']],
-                        key="series_col_select",
-                        help="Column containing series/component names"
+                with col1_sel:
+                    # Check if data has series identifier column (like 'variable')
+                    has_series_col = any(col.lower() in ['variable', 'series', 'category', 'component'] for col in df.columns)
+                    
+                    if has_series_col:
+                        st.markdown("**📊 Data Format Detected: Long Format**")
+                        series_col = st.selectbox(
+                            "Series Identifier Column",
+                            [col for col in df.columns if col.lower() in ['variable', 'series', 'category', 'component']],
+                            key="series_col_select",
+                            help="Column containing series/component names"
+                        )
+                        
+                        value_col = st.selectbox(
+                            "Value Column",
+                            [col for col in df.columns if df[col].dtype in ['int64', 'float64', 'int32', 'float32']],
+                            key="value_col_select",
+                            help="Column containing numeric values"
+                        )
+                    else:
+                        series_col = None
+                        value_col = None
+                    
+                    # Only show date/time columns for X-axis
+                    date_cols = []
+                    for col in df.columns:
+                        if any(keyword in col.lower() for keyword in ['date', 'time', 'year', 'month', 'day']):
+                            date_cols.append(col)
+                    
+                    if not date_cols:
+                        date_cols = [df.columns[0]]  # Fallback to first column
+                    
+                    x_column = st.selectbox(
+                        "X-axis Column (Time/Date)",
+                        date_cols,
+                        key="x_col_select"
                     )
                     
-                    value_col = st.selectbox(
-                        "Value Column",
-                        [col for col in df.columns if df[col].dtype in ['int64', 'float64', 'int32', 'float32']],
-                        key="value_col_select",
-                        help="Column containing numeric values"
+                    # Show date range and selectors
+                    if x_column in df.columns:
+                        try:
+                            # Convert to datetime for range calculation
+                            date_series = pd.to_datetime(df[x_column], infer_datetime_format=True, errors='coerce')
+                            min_date = date_series.min().date()
+                            max_date = date_series.max().date()
+                            
+                            st.caption(f"Available: {min_date} to {max_date}")
+                            
+                            start_date = st.date_input(
+                                "Start Date",
+                                value=min_date,
+                                min_value=min_date,
+                                max_value=max_date,
+                                key="start_date_filter"
+                            )
+                            
+                            end_date = st.date_input(
+                                "End Date",
+                                value=max_date,
+                                min_value=min_date,
+                                max_value=max_date,
+                                key="end_date_filter"
+                            )
+                        except:
+                            start_date = None
+                            end_date = None
+                
+                with col2_sel:
+                    # Show numeric columns for Y-axis
+                    numeric_cols = []
+                    for col in df.columns:
+                        if col != x_column and df[col].dtype in ['int64', 'float64', 'int32', 'float32']:
+                            numeric_cols.append(col)
+                    
+                    y_columns = st.multiselect(
+                        "Y-axis Columns (Numeric)",
+                        numeric_cols,
+                        key="y_col_select"
                     )
-                else:
-                    series_col = None
-                    value_col = None
+                    
+                    # Chart type selection
+                    chart_type = st.selectbox(
+                        "Chart Type",
+                        ["line", "bar", "scatter", "area", "stacked_bar", "stacked_area"],
+                        key="chart_type_select"
+                    )
                 
-                # Only show date/time columns for X-axis
-                date_cols = []
-                for col in df.columns:
-                    if any(keyword in col.lower() for keyword in ['date', 'time', 'year', 'month', 'day']):
-                        date_cols.append(col)
-                
-                if not date_cols:
-                    date_cols = [df.columns[0]]  # Fallback to first column
-                
-                x_column = st.selectbox(
-                    "X-axis Column (Time/Date)",
-                    date_cols,
-                    key="x_col_select"
-                )
-                
-                # Show date range and selectors
-                if x_column in df.columns:
-                    try:
-                        # Convert to datetime for range calculation
-                        date_series = pd.to_datetime(df[x_column], infer_datetime_format=True, errors='coerce')
-                        min_date = date_series.min().date()
-                        max_date = date_series.max().date()
-                        
-                        st.caption(f"Available: {min_date} to {max_date}")
-                        
-                        start_date = st.date_input(
-                            "Start Date",
-                            value=min_date,
-                            min_value=min_date,
-                            max_value=max_date,
-                            key="start_date_filter"
-                        )
-                        
-                        end_date = st.date_input(
-                            "End Date",
-                            value=max_date,
-                            min_value=min_date,
-                            max_value=max_date,
-                            key="end_date_filter"
-                        )
-                    except:
-                        start_date = None
-                        end_date = None
+                # Date range presets (outside nested columns)
+                st.markdown("**📅 Quick Date Ranges**")
+                preset_cols = st.columns(4)
+                with preset_cols[0]:
+                    if st.button("1Y", key="preset_1y"):
+                        end_date = max_date
+                        start_date = (pd.Timestamp(max_date) - pd.DateOffset(years=1)).date()
+                        st.rerun()
+                with preset_cols[1]:
+                    if st.button("5Y", key="preset_5y"):
+                        end_date = max_date
+                        start_date = (pd.Timestamp(max_date) - pd.DateOffset(years=5)).date()
+                        st.rerun()
+                with preset_cols[2]:
+                    if st.button("10Y", key="preset_10y"):
+                        end_date = max_date
+                        start_date = (pd.Timestamp(max_date) - pd.DateOffset(years=10)).date()
+                        st.rerun()
+                with preset_cols[3]:
+                    if st.button("Max", key="preset_max"):
+                        start_date = min_date
+                        end_date = max_date
+                        st.rerun()
             
-            with col2_sel:
-                # Show numeric columns for Y-axis
-                numeric_cols = []
-                for col in df.columns:
-                    if col != x_column and df[col].dtype in ['int64', 'float64', 'int32', 'float32']:
-                        numeric_cols.append(col)
+            with tab2:
+                st.markdown("### 🎨 Chart Appearance")
                 
-                y_columns = st.multiselect(
-                    "Y-axis Columns (Numeric)",
-                    numeric_cols,
-                    key="y_col_select"
-                )
+                # Line style options
+                col1_app, col2_app = st.columns(2)
+                with col1_app:
+                    line_width = st.slider("Line Width", 1, 5, 2, key="line_width")
+                    line_dash = st.selectbox("Line Style", ["solid", "dash", "dot", "dashdot"], key="line_dash")
+                    show_markers = st.checkbox("Show Markers", value=False, key="show_markers")
+                    if show_markers:
+                        marker_size = st.slider("Marker Size", 4, 12, 6, key="marker_size")
                 
-                # Chart type selection
-                chart_type = st.selectbox(
-                    "Chart Type",
-                    ["line", "bar", "scatter", "area", "stacked_bar", "stacked_area"],
-                    key="chart_type_select"
-                )
-            
-            # Color selection for each component
-            if y_columns:
-                st.markdown("#### 🎨 Component Colors")
-                component_colors = {}
-                cols_per_row = 3
-                for i in range(0, len(y_columns), cols_per_row):
-                    cols = st.columns(cols_per_row)
-                    for j, col_idx in enumerate(range(i, min(i + cols_per_row, len(y_columns)))):
-                        y_col = y_columns[col_idx]
-                        with cols[j]:
+                with col2_app:
+                    # Color selection for each component
+                    if y_columns:
+                        st.markdown("**Component Colors**")
+                        component_colors = {}
+                        for idx, y_col in enumerate(y_columns):
                             component_colors[y_col] = st.color_picker(
                                 f"{y_col}",
-                                value=["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b"][col_idx % 6],
+                                value=["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b"][idx % 6],
                                 key=f"color_{y_col}"
                             )
+                
+                # Chart dimensions
+                st.markdown("**📐 Chart Dimensions**")
+                dim_col1, dim_col2 = st.columns(2)
+                with dim_col1:
+                    chart_width = st.number_input("Width (px)", 600, 1600, 1000, 50, key="chart_width")
+                with dim_col2:
+                    chart_height = st.number_input("Height (px)", 400, 1200, 600, 50, key="chart_height")
+                
+                # Legend options
+                st.markdown("**📋 Legend**")
+                show_legend = st.checkbox("Show Legend", value=len(y_columns) > 1 if y_columns else True, key="show_legend_check")
+                if show_legend:
+                    legend_position = st.selectbox(
+                        "Legend Position",
+                        ["top", "bottom", "left", "right", "top-left", "top-right", "bottom-left", "bottom-right"],
+                        index=1,
+                        key="legend_pos"
+                    )
             
-            user_prompt = st.text_area(
-                "Chart Title (optional)",
-                placeholder="Enter custom chart title",
-                key="create_upload"
-            )
+            with tab3:
+                st.markdown("### 📏 Axis Configuration")
+                
+                # X-axis options
+                st.markdown("**X-Axis (Time)**")
+                x_label_custom = st.text_input("X-Axis Label", value=x_column if x_column else "Date", key="x_label")
+                x_grid = st.checkbox("Show X Grid", value=True, key="x_grid")
+                
+                # Y-axis options
+                st.markdown("**Y-Axis**")
+                y_label_custom = st.text_input("Y-Axis Label", value="Value", key="y_label")
+                y_scale = st.selectbox("Y-Axis Scale", ["Linear", "Logarithmic"], key="y_scale")
+                y_grid = st.checkbox("Show Y Grid", value=True, key="y_grid")
+                
+                # Y-axis range
+                auto_range = st.checkbox("Auto Y-Axis Range", value=True, key="auto_y_range")
+                if not auto_range:
+                    y_min = st.number_input("Y-Axis Min", value=0.0, key="y_min")
+                    y_max = st.number_input("Y-Axis Max", value=100.0, key="y_max")
+            
+            with tab4:
+                st.markdown("### 🔧 Advanced Options")
+                
+                # Data transformations
+                st.markdown("**📊 Data Transformation**")
+                transform = st.selectbox(
+                    "Transform",
+                    ["None", "Percent Change", "Difference", "Percent Change from Year Ago", "Compounded Annual Rate"],
+                    key="data_transform"
+                )
+                
+                # Aggregation
+                st.markdown("**📈 Aggregation**")
+                aggregation = st.selectbox(
+                    "Aggregation Method",
+                    ["None", "Average", "Sum", "End of Period"],
+                    key="aggregation"
+                )
+                
+                # Annotations
+                st.markdown("**📝 Annotations**")
+                add_recession_bars = st.checkbox("Add Recession Shading", value=False, key="recession_bars")
+                add_reference_line = st.checkbox("Add Reference Line", value=False, key="ref_line")
+                if add_reference_line:
+                    ref_line_value = st.number_input("Reference Line Value", value=0.0, key="ref_line_val")
+                    ref_line_label = st.text_input("Reference Line Label", value="Reference", key="ref_line_label")
+            
+            # Chart title and subtitle
+            st.markdown("---")
+            col_title1, col_title2 = st.columns([3, 1])
+            with col_title1:
+                user_prompt = st.text_input(
+                    "Chart Title",
+                    placeholder="Enter custom chart title",
+                    key="create_upload"
+                )
+                chart_subtitle = st.text_input(
+                    "Subtitle (optional)",
+                    placeholder="Additional context or source",
+                    key="chart_subtitle"
+                )
             
             if st.button("🚀 Generate Chart", key="gen_upload"):
                 if y_columns or (series_col and value_col):
@@ -669,21 +619,52 @@ if page == "upload":
                                 except:
                                     pass
                             
-                            # Create chart config with auto ranges
+                            # Apply data transformations
+                            transform = st.session_state.get('data_transform', 'None')
+                            if transform != 'None' and y_columns:
+                                for col in y_columns:
+                                    if col in filtered_df.columns:
+                                        if transform == 'Percent Change':
+                                            filtered_df[col] = filtered_df[col].pct_change() * 100
+                                        elif transform == 'Difference':
+                                            filtered_df[col] = filtered_df[col].diff()
+                                        elif transform == 'Percent Change from Year Ago':
+                                            filtered_df[col] = filtered_df[col].pct_change(periods=12) * 100
+                                        elif transform == 'Compounded Annual Rate':
+                                            filtered_df[col] = ((1 + filtered_df[col].pct_change()) ** 12 - 1) * 100
+                            
+                            # Create chart config with all customizations
                             chart_config = {
                                 "chart_type": chart_type,
                                 "x_column": x_column,
                                 "y_columns": y_columns,
                                 "title": user_prompt if user_prompt else f"{', '.join(y_columns)} over {x_column}",
-                                "x_label": x_column,
-                                "y_label": ", ".join(y_columns),
-                                "show_legend": len(y_columns) > 1
+                                "subtitle": st.session_state.get('chart_subtitle', ''),
+                                "x_label": st.session_state.get('x_label', x_column),
+                                "y_label": st.session_state.get('y_label', ', '.join(y_columns)),
+                                "show_legend": st.session_state.get('show_legend_check', len(y_columns) > 1),
+                                "legend_position": st.session_state.get('legend_pos', 'bottom'),
+                                "line_width": st.session_state.get('line_width', 2),
+                                "line_dash": st.session_state.get('line_dash', 'solid'),
+                                "show_markers": st.session_state.get('show_markers', False),
+                                "marker_size": st.session_state.get('marker_size', 6),
+                                "x_grid": st.session_state.get('x_grid', True),
+                                "y_grid": st.session_state.get('y_grid', True),
+                                "y_scale": st.session_state.get('y_scale', 'Linear'),
+                                "chart_width": st.session_state.get('chart_width', 1000),
+                                "chart_height": st.session_state.get('chart_height', 600),
+                                "transform": transform,
+                                "aggregation": st.session_state.get('aggregation', 'None')
                             }
                             
                             # Add component colors
-                            if y_columns and component_colors:
+                            if y_columns and 'component_colors' in locals():
                                 colors = [component_colors.get(col, "#1f77b4") for col in y_columns]
                                 chart_config['colors'] = colors
+                            
+                            # Add Y-axis range if not auto
+                            if not st.session_state.get('auto_y_range', True):
+                                chart_config['y_range'] = [st.session_state.get('y_min', 0), st.session_state.get('y_max', 100)]
                             
                             # Merge with metadata if provided
                             if metadata:
@@ -695,17 +676,85 @@ if page == "upload":
                             
                             fig = chart_generator.create_chart(filtered_df, chart_config)
                             
-                            # Add legend positioning
+                            # Apply advanced customizations
+                            legend_pos = chart_config.get('legend_position', 'bottom')
+                            legend_config = {
+                                'top': dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
+                                'bottom': dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5),
+                                'left': dict(orientation="v", yanchor="middle", y=0.5, xanchor="right", x=-0.05),
+                                'right': dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.02),
+                                'top-left': dict(orientation="v", yanchor="top", y=0.99, xanchor="left", x=0.01),
+                                'top-right': dict(orientation="v", yanchor="top", y=0.99, xanchor="right", x=0.99),
+                                'bottom-left': dict(orientation="v", yanchor="bottom", y=0.01, xanchor="left", x=0.01),
+                                'bottom-right': dict(orientation="v", yanchor="bottom", y=0.01, xanchor="right", x=0.99)
+                            }
+                            
                             if chart_config.get("show_legend", False):
+                                fig.update_layout(legend=legend_config.get(legend_pos, legend_config['bottom']))
+                            else:
+                                fig.update_layout(showlegend=False)
+                            
+                            # Apply line styles
+                            for trace in fig.data:
+                                if hasattr(trace, 'line'):
+                                    trace.update(
+                                        line=dict(
+                                            width=chart_config.get('line_width', 2),
+                                            dash=chart_config.get('line_dash', 'solid')
+                                        )
+                                    )
+                                if chart_config.get('show_markers', False) and hasattr(trace, 'marker'):
+                                    trace.update(
+                                        mode='lines+markers',
+                                        marker=dict(size=chart_config.get('marker_size', 6))
+                                    )
+                            
+                            # Apply grid settings
+                            fig.update_xaxes(showgrid=chart_config.get('x_grid', True))
+                            fig.update_yaxes(
+                                showgrid=chart_config.get('y_grid', True),
+                                type='log' if chart_config.get('y_scale') == 'Logarithmic' else 'linear'
+                            )
+                            
+                            # Add subtitle if provided
+                            if chart_config.get('subtitle'):
                                 fig.update_layout(
-                                    legend=dict(
-                                        orientation="h",
-                                        yanchor="top",
-                                        y=-0.15,
-                                        xanchor="center",
-                                        x=0.5
+                                    title=dict(
+                                        text=f"<b>{chart_config['title']}</b><br><sub>{chart_config['subtitle']}</sub>"
                                     )
                                 )
+                            
+                            # Add reference line if requested
+                            if st.session_state.get('ref_line', False):
+                                fig.add_hline(
+                                    y=st.session_state.get('ref_line_val', 0),
+                                    line_dash="dash",
+                                    line_color="gray",
+                                    annotation_text=st.session_state.get('ref_line_label', 'Reference'),
+                                    annotation_position="right"
+                                )
+                            
+                            # Add recession shading if requested
+                            if st.session_state.get('recession_bars', False):
+                                # Example recession periods (customize as needed)
+                                recessions = [
+                                    ('2020-02-01', '2020-04-01'),  # COVID-19
+                                    ('2007-12-01', '2009-06-01'),  # Great Recession
+                                ]
+                                for start, end in recessions:
+                                    fig.add_vrect(
+                                        x0=start, x1=end,
+                                        fillcolor="gray", opacity=0.2,
+                                        layer="below", line_width=0,
+                                        annotation_text="Recession",
+                                        annotation_position="top left"
+                                    )
+                            
+                            # Set chart dimensions
+                            fig.update_layout(
+                                width=chart_config.get('chart_width', 1000),
+                                height=chart_config.get('chart_height', 600)
+                            )
                             
                             # Save chart
                             chart_id = db.save_chart(
@@ -728,77 +777,61 @@ if page == "upload":
                             }
                             
                             st.success(f"✅ Chart created and saved! (ID: {chart_id})")
-                            st.plotly_chart(fig, use_container_width=True)
                             
-                            # Save Chart for Reports section
-                            st.markdown("---")
-                            st.subheader("💾 Save Chart for Reports")
+                            # Export options
+                            st.markdown("**💾 Export Chart**")
+                            export_cols = st.columns(4)
+                            with export_cols[0]:
+                                if st.button("📥 PNG", key="export_png"):
+                                    img_bytes = fig.to_image(format="png", width=chart_config.get('chart_width', 1000), height=chart_config.get('chart_height', 600))
+                                    st.download_button("Download PNG", img_bytes, "chart.png", "image/png")
+                            with export_cols[1]:
+                                if st.button("📥 SVG", key="export_svg"):
+                                    img_bytes = fig.to_image(format="svg", width=chart_config.get('chart_width', 1000), height=chart_config.get('chart_height', 600))
+                                    st.download_button("Download SVG", img_bytes, "chart.svg", "image/svg+xml")
+                            with export_cols[2]:
+                                if st.button("📥 PDF", key="export_pdf"):
+                                    img_bytes = fig.to_image(format="pdf", width=chart_config.get('chart_width', 1000), height=chart_config.get('chart_height', 600))
+                                    st.download_button("Download PDF", img_bytes, "chart.pdf", "application/pdf")
+                            with export_cols[3]:
+                                if st.button("📥 Data", key="export_data"):
+                                    csv = filtered_df.to_csv(index=False)
+                                    st.download_button("Download CSV", csv, "chart_data.csv", "text/csv")
                             
-                            with st.form("save_chart_form"):
-                                save_name = st.text_input(
-                                    "Chart Name for Reports",
-                                    value=chart_config["title"],
-                                    help="This name will be used in reports and exports"
-                                )
-                                
-                                # Auto-derive category from title
-                                title_lower = chart_config["title"].lower()
-                                if any(word in title_lower for word in ['inflation', 'pce', 'price']):
-                                    default_category = "Inflation Analysis"
-                                elif any(word in title_lower for word in ['gdp', 'growth', 'economic']):
-                                    default_category = "Economic Growth"
-                                elif any(word in title_lower for word in ['employment', 'unemployment', 'jobs']):
-                                    default_category = "Employment"
-                                elif any(word in title_lower for word in ['consumer', 'spending', 'retail']):
-                                    default_category = "Consumer Analysis"
-                                else:
-                                    default_category = "Custom Analysis"
-                                
-                                category = st.selectbox(
-                                    "Report Category",
-                                    ["Inflation Analysis", "Economic Growth", "Employment", "Consumer Analysis", "Market Analysis", "Custom Analysis"],
-                                    index=["Inflation Analysis", "Economic Growth", "Employment", "Consumer Analysis", "Market Analysis", "Custom Analysis"].index(default_category)
-                                )
-                                
-                                if st.form_submit_button("💾 Save for Reports"):
-                                    try:
-                                        # Check if chart already exists
-                                        existing_chart = db.get_chart_by_name_category(save_name, category)
-                                        
-                                        if existing_chart:
-                                            # Use existing chart
-                                            report_chart_id = existing_chart['id']
-                                            st.info(f"📊 Chart already exists with ID: {report_chart_id}")
-                                        else:
-                                            # Save with report metadata
+                            st.plotly_chart(fig, use_container_width=False)
+                            
+                            # Save Chart inline
+                            with st.expander("💾 Save Chart"):
+                                save_col1, save_col2 = st.columns(2)
+                                with save_col1:
+                                    category = st.selectbox(
+                                        "Category",
+                                        ["Inflation", "Growth", "Employment", "Consumer", "Market", "Custom"],
+                                        key="save_category"
+                                    )
+                                with save_col2:
+                                    if st.button("💾 Save", key="save_chart_btn", use_container_width=True):
+                                        try:
                                             report_config = chart_config.copy()
                                             report_config.update({
-                                                'report_name': save_name,
+                                                'report_name': chart_config["title"],
                                                 'report_category': category,
-                                                'created_date': datetime.now().isoformat(),
-                                                'data_source': 'user_upload'
+                                                'created_date': datetime.now().isoformat()
                                             })
                                             
-                                            report_chart_id = db.save_chart(
-                                                chart_name=save_name,
+                                            report_id = db.save_chart(
+                                                chart_name=chart_config["title"][:50],
                                                 chart_type="Line",
                                                 figure_json=fig.to_json(),
                                                 chart_config=report_config,
-                                                user_prompt=f"Report: {save_name} ({category})",
+                                                user_prompt=f"Report: {chart_config['title']}",
                                                 category=category
                                             )
-                                            
-                                            # Save data with report metadata
-                                            db.save_chart_data(report_chart_id, 'report_data', filtered_df)
-                                        
-                                        st.success(f"✅ Chart saved for reports! (Report ID: {report_chart_id})")
-                                        st.info(f"📊 **{save_name}** saved in category: **{category}**")
-                                        
-                                        # Force refresh of filters by clearing cache
-                                        st.rerun()
-                                        
-                                    except Exception as e:
-                                        st.error(f"Save failed: {str(e)}")
+                                            db.save_chart_data(report_id, 'report_data', filtered_df)
+                                            st.success(f"✅ Saved! (ID: {report_id})")
+                                            st.rerun()
+                                        except Exception as e:
+                                            st.error(f"Save failed: {str(e)[:50]}")
                             
                         except Exception as e:
                             st.error(f"Error: {str(e)}")
@@ -810,9 +843,9 @@ if page == "upload":
     
     with col2:
         if st.session_state.data is not None:
-            st.subheader("🤖 AI Data Analysis")
+            st.subheader("📊 Data Summary")
             
-            if st.button("📊 Data Summary", key="data_summary"):
+            if st.button("📊 View Data Summary", key="data_summary"):
                 with st.spinner("Analyzing data..."):
                     try:
                         df = st.session_state.data
@@ -838,144 +871,28 @@ if page == "upload":
         # Show AI options after chart is created
         if 'current_upload_chart' in st.session_state:
             st.markdown("---")
-            st.subheader("🤖 AI Wizard")
+            st.subheader("🤖 AI Analysis")
             
-            # Show saved chart info
+            # Show chart first
             chart = st.session_state.current_upload_chart
-            if 'report_name' in chart.get('config', {}):
-                st.info(f"📊 Saved as: **{chart['config']['report_name']}** ({chart['config']['report_category']})")
+            st.plotly_chart(chart['figure'], use_container_width=True, key="upload_chart_display")
             
-            # Initialize upload preview state
-            if 'upload_preview_figure' not in st.session_state:
-                st.session_state.upload_preview_figure = None
-            if 'upload_preview_config' not in st.session_state:
-                st.session_state.upload_preview_config = None
-            
-            # Customization with Preview
-            st.markdown("### 🎨 Chart Customization")
-            custom_prompt = st.text_area(
-                "Customize chart",
-                placeholder="e.g., Change title to 'Recent Inflation Trends', use blue colors, render averages for GDP and inflation",
-                key="custom_upload"
-            )
-            
-            col1_up, col2_up = st.columns(2)
-            
-            with col1_up:
-                if st.button("🔍 Preview Changes", key="preview_upload"):
-                    if custom_prompt:
-                        with st.spinner("Generating preview..."):
-                            try:
-                                chart = st.session_state.current_upload_chart
-                                chart_data = chart.get('data')
-                                
-                                # Try LLM interpretation first
-                                try:
-                                    updated_config = llm_handler.interpret_edit_request(
-                                        custom_prompt,
-                                        chart['config'],
-                                        llm_provider,
-                                        chart_data
-                                    )
-                                except Exception as llm_error:
-                                    # Fallback: simple keyword-based updates
-                                    updated_config = chart['config'].copy()
-                                    prompt_lower = custom_prompt.lower()
-                                    
-                                    # Extract title if mentioned
-                                    if 'title' in prompt_lower:
-                                        import re
-                                        title_match = re.search(r'["\']([^"\'\']+)["\']', custom_prompt)
-                                        if title_match:
-                                            updated_config['title'] = title_match.group(1)
-                                    
-                                    # Color changes
-                                    if 'blue' in prompt_lower:
-                                        updated_config['colors'] = ['#1f77b4', '#ff7f0e']
-                                    elif 'red' in prompt_lower:
-                                        updated_config['colors'] = ['#d62728', '#ff7f0e']
-                                    
-                                    st.warning(f"⚠️ LLM unavailable, using basic customization")
-                                
-                                fig = chart_generator.create_chart(chart_data, updated_config)
-                                
-                                # Handle adding averages
-                                if chart_data is not None and ('avg' in custom_prompt.lower() or 'average' in custom_prompt.lower()):
-                                    numeric_cols = chart_data.select_dtypes(include='number').columns.tolist()
-                                    for col in numeric_cols:
-                                        avg_val = chart_data[col].mean()
-                                        fig.add_hline(
-                                            y=avg_val,
-                                            line_dash="dash",
-                                            line_color="red",
-                                            annotation_text=f"{col} avg: {avg_val:.2f}",
-                                            annotation_position="top right"
-                                        )
-                                
-                                st.session_state.upload_preview_figure = fig
-                                st.session_state.upload_preview_config = updated_config
-                                
-                                st.success("✅ Preview generated! Review changes below.")
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"Preview failed: {str(e)}")
-                                st.info("💡 Tip: Check LLM provider settings or try simpler customization requests")
-            
-            with col2_up:
-                if st.button("💾 Apply & Save Changes", key="apply_upload", disabled=st.session_state.upload_preview_figure is None):
-                    if st.session_state.upload_preview_figure is not None:
-                        with st.spinner("Saving changes..."):
-                            try:
-                                chart = st.session_state.current_upload_chart
-                                
-                                db.update_chart(
-                                    chart['id'],
-                                    chart_config=st.session_state.upload_preview_config,
-                                    figure_json=st.session_state.upload_preview_figure.to_json()
-                                )
-                                
-                                st.session_state.current_upload_chart['figure'] = st.session_state.upload_preview_figure
-                                st.session_state.current_upload_chart['config'] = st.session_state.upload_preview_config
-                                
-                                st.session_state.upload_preview_figure = None
-                                st.session_state.upload_preview_config = None
-                                
-                                st.success("✅ Changes applied and saved!")
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"Save failed: {str(e)[:100]}...")
-            
-            # Show upload preview
-            if st.session_state.upload_preview_figure is not None:
-                st.markdown("#### 🔍 Preview")
-                st.info("👆 Review the changes above. Click 'Apply & Save Changes' to make them permanent.")
-                st.plotly_chart(st.session_state.upload_preview_figure, use_container_width=True, key="upload_preview_chart")
-                
-                if st.button("🔄 Reset Preview", key="reset_upload_preview"):
-                    st.session_state.upload_preview_figure = None
-                    st.session_state.upload_preview_config = None
-                    st.rerun()
-            
-            st.markdown("---")
-            
-            # Quick Analysis with Image
+            # Quick Analysis
             if st.button("📊 Quick Analysis", key="quick_analysis_upload"):
                 with st.spinner("Analyzing chart..."):
                     try:
-                        # Simple analysis without image generation
-                        chart = st.session_state.current_upload_chart
                         chart_name = chart.get('config', {}).get('report_name', chart['prompt'])
                         category = chart.get('config', {}).get('report_category', 'Economic Analysis')
                         
                         analysis_prompt = f"""
-Analyze this economic chart: {chart_name} (Category: {category})
+Analyze this chart: {chart_name}
 
-Provide 3 key insights about this chart focusing on:
-1. Main trends visible
-2. Economic implications
-3. Notable patterns
+Provide 3 bullet points:
+• Main trend
+• Key insight
+• Implication
 
-Keep response to 150-200 words.
+Limit: 100 words.
 """
                         
                         analysis = llm_handler._call_llm(
@@ -989,10 +906,10 @@ Keep response to 150-200 words.
                         
                     except Exception as e:
                         st.markdown("### 🔍 Analysis")
-                        st.markdown(f"**Chart**: {st.session_state.current_upload_chart['prompt']}\n\n**Insight**: This economic visualization shows data patterns that indicate trends worth monitoring for policy and investment decisions.")
+                        st.markdown(f"**Chart**: {chart['prompt']}\n\n**Insight**: This economic visualization shows data patterns that indicate trends worth monitoring for policy and investment decisions.")
                         st.error(f"AI analysis unavailable: {str(e)[:50]}...")
             
-            # Persona Summaries with Image
+            # Persona Summaries
             st.markdown("### 📝 Summaries")
             personas = ["Executive", "Economist", "General Public"]
             
@@ -1000,20 +917,18 @@ Keep response to 150-200 words.
                 if st.button(f"📝 {persona}", key=f"upload_summary_{persona.lower()}"):
                     with st.spinner(f"Generating {persona} summary..."):
                         try:
-                            # Simple persona analysis without chart context generation
-                            chart = st.session_state.current_upload_chart
                             chart_name = chart.get('config', {}).get('report_name', chart['prompt'])
                             category = chart.get('config', {}).get('report_category', 'Economic Analysis')
                             
                             persona_prompt = f"""
-As a {persona}, analyze this economic chart: {chart_name} (Category: {category})
+As {persona}, analyze: {chart_name}
 
-Provide analysis covering:
-1. Key economic insights from your {persona.lower()} perspective
-2. Implications for {persona.lower()} decision-making
-3. Actionable recommendations
+3 key points for {persona.lower()}:
+• Main observation
+• Decision impact
+• Action item
 
-Write 200-250 words maximum. Focus on insights relevant to a {persona.lower()}.
+Limit: 80 words.
 """
                             
                             summary = llm_handler._call_llm(
@@ -1030,7 +945,7 @@ Write 200-250 words maximum. Focus on insights relevant to a {persona.lower()}.
                             st.markdown(f"**{persona} Analysis**: This economic chart shows data patterns relevant for {persona.lower()} decision-making and strategic planning.")
                             st.error(f"AI unavailable: {str(e)[:50]}...")
             
-            # Q&A with simplified approach
+            # Q&A
             st.markdown("### ❓ Ask Questions")
             question = st.text_input("Your question:", key="qa_upload")
             
@@ -1038,18 +953,14 @@ Write 200-250 words maximum. Focus on insights relevant to a {persona.lower()}.
                 if question:
                     with st.spinner("Getting answer..."):
                         try:
-                            chart = st.session_state.current_upload_chart
                             chart_name = chart.get('config', {}).get('report_name', chart['prompt'])
                             category = chart.get('config', {}).get('report_category', 'Economic Analysis')
                             
                             qa_prompt = f"""
-Question: {question}
+Q: {question}
+Chart: {chart_name}
 
-Chart: {chart_name} (Category: {category})
-
-Answer the question about this economic chart. Provide insights based on typical economic analysis.
-
-Limit response to 100-150 words.
+Answer in 60 words.
 """
                             
                             answer = llm_handler._call_llm(
@@ -1063,10 +974,116 @@ Limit response to 100-150 words.
                             
                         except Exception as e:
                             st.markdown("### 💬 Answer")
-                            chart = st.session_state.current_upload_chart
                             chart_name = chart.get('config', {}).get('report_name', chart['prompt'])
                             st.markdown(f"**Question**: {question}\n\n**Response**: Based on the chart analysis for '{chart_name}', this economic data contains information that would require detailed analysis to provide a comprehensive answer.")
                             st.error(f"AI unavailable: {str(e)[:50]}...")
+
+elif page == "saved":
+    st.subheader("💾 Saved Charts")
+    
+    # Load saved charts
+    try:
+        all_charts = db.list_charts(limit=100)
+        if all_charts:
+            chart_names = [f"{c['chart_name']} (ID: {c['id']})" for c in all_charts]
+            selected = st.selectbox("Select Chart", chart_names, key="saved_chart_select")
+            
+            if selected:
+                chart_id = int(selected.split("ID: ")[1].rstrip(")"))
+                saved_chart = db.get_chart(chart_id)
+                
+                if saved_chart:
+                    col1, col2 = st.columns([2, 1])
+                    
+                    with col1:
+                        # Display chart
+                        fig = go.Figure(json.loads(saved_chart['figure_json']))
+                        st.plotly_chart(fig, use_container_width=True)
+                    
+                    with col2:
+                        st.subheader("🤖 AI Analysis")
+                        
+                        chart_name = saved_chart['chart_name']
+                        
+                        # Quick Analysis
+                        if st.button("📊 Quick Analysis", key="saved_quick_analysis"):
+                            with st.spinner("Analyzing..."):
+                                try:
+                                    analysis_prompt = f"""
+Analyze this chart: {chart_name}
+
+Provide 3 bullet points:
+• Main trend
+• Key insight
+• Implication
+
+Limit: 100 words.
+"""
+                                    analysis = llm_handler._call_llm(
+                                        "You are an economic analyst providing chart insights.",
+                                        analysis_prompt,
+                                        llm_provider
+                                    )
+                                    st.markdown("### 🔍 Analysis")
+                                    st.markdown(analysis)
+                                except Exception as e:
+                                    st.error(f"AI unavailable: {str(e)[:50]}")
+                        
+                        # Persona Summaries
+                        st.markdown("### 📝 Summaries")
+                        personas = ["Executive", "Economist", "General Public"]
+                        
+                        for persona in personas:
+                            if st.button(f"📝 {persona}", key=f"saved_summary_{persona.lower()}"):
+                                with st.spinner(f"Generating {persona} summary..."):
+                                    try:
+                                        persona_prompt = f"""
+As {persona}, analyze: {chart_name}
+
+3 key points for {persona.lower()}:
+• Main observation
+• Decision impact
+• Action item
+
+Limit: 80 words.
+"""
+                                        summary = llm_handler._call_llm(
+                                            f"You are an expert {persona.lower()} providing economic analysis.",
+                                            persona_prompt,
+                                            llm_provider
+                                        )
+                                        st.markdown(f"### 📄 {persona} Summary")
+                                        st.markdown(summary)
+                                    except Exception as e:
+                                        st.error(f"AI unavailable: {str(e)[:50]}")
+                        
+                        # Q&A
+                        st.markdown("### ❓ Ask Questions")
+                        question = st.text_input("Your question:", key="saved_qa")
+                        
+                        if st.button("🔍 Get Answer", key="saved_answer"):
+                            if question:
+                                with st.spinner("Getting answer..."):
+                                    try:
+                                        qa_prompt = f"""
+Q: {question}
+Chart: {chart_name}
+
+Answer in 60 words.
+"""
+                                        answer = llm_handler._call_llm(
+                                            "You are an economic analyst answering questions about charts.",
+                                            qa_prompt,
+                                            llm_provider
+                                        )
+                                        st.markdown("### 💬 Answer")
+                                        st.markdown(answer)
+                                    except Exception as e:
+                                        st.error(f"AI unavailable: {str(e)[:50]}")
+        else:
+            st.info("No saved charts yet. Create and save charts from the Upload Data page.")
+    except Exception as e:
+        st.error(f"Error loading charts: {str(e)}")
 
 elif page == "image_upload":
     col1, col2 = st.columns([2, 1])

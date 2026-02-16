@@ -1,0 +1,27 @@
+chart:
+  type: line
+  x_column: date
+  y_columns:
+    - gdp_growth
+    - inflation
+
+style:
+  title: "Economic Indicators Dashboard"
+  x_label: "Time Period"
+  y_label: "Percentage (%)"
+  colors:
+    - "#2E86AB"
+    - "#A23B72"
+  palette: economic
+  show_legend: true
+
+annotations:
+  - x: "2020-03-01"
+    y: 2.5
+    text: "Policy Change"
+    showarrow: true
+
+custom:
+  data_source: "Federal Reserve"
+  update_frequency: "monthly"
+  notes: "Seasonally adjusted data"

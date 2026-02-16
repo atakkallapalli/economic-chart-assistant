@@ -27,6 +27,10 @@ class ChartGenerator:
             return self._create_scatter_chart(df, config)
         elif chart_type == 'area':
             return self._create_area_chart(df, config)
+        elif chart_type == 'stacked_bar':
+            return self._create_stacked_bar_chart(df, config)
+        elif chart_type == 'stacked_area':
+            return self._create_stacked_area_chart(df, config)
         elif chart_type == 'pie':
             return self._create_pie_chart(df, config)
         elif chart_type == 'heatmap':
@@ -323,6 +327,70 @@ class ChartGenerator:
             ),
             width=600,
             height=600
+        )
+        
+        return self._apply_professional_styling(fig, config)
+
+    def _create_stacked_bar_chart(self, df: pd.DataFrame, config: Dict) -> go.Figure:
+        """Create a professional stacked bar chart"""
+        x_col = config.get('x_column')
+        y_cols = config.get('y_columns', [])
+        
+        fig = go.Figure()
+        colors = self._get_colors(config, len(y_cols))
+        
+        for idx, y_col in enumerate(y_cols):
+            if y_col in df.columns:
+                fig.add_trace(go.Bar(
+                    x=df[x_col],
+                    y=df[y_col],
+                    name=y_col.replace('_', ' ').title(),
+                    marker=dict(
+                        color=colors[idx],
+                        line=dict(color='white', width=0.5)
+                    ),
+                    hovertemplate='<b>%{fullData.name}</b><br>' +
+                                  f'{x_col}: %{{x}}<br>' +
+                                  f'{y_col}: %{{y:.2f}}<extra></extra>'
+                ))
+        
+        fig.update_layout(
+            xaxis_title=config.get('x_label', x_col.replace('_', ' ').title()),
+            yaxis_title=config.get('y_label', 'Value'),
+            barmode='stack'
+        )
+        
+        return self._apply_professional_styling(fig, config)
+    
+    def _create_stacked_area_chart(self, df: pd.DataFrame, config: Dict) -> go.Figure:
+        """Create a professional stacked area chart"""
+        x_col = config.get('x_column')
+        y_cols = config.get('y_columns', [])
+        
+        fig = go.Figure()
+        colors = self._get_colors(config, len(y_cols))
+        
+        for idx, y_col in enumerate(y_cols):
+            if y_col in df.columns:
+                fig.add_trace(go.Scatter(
+                    x=df[x_col],
+                    y=df[y_col],
+                    mode='lines',
+                    name=y_col.replace('_', ' ').title(),
+                    stackgroup='one',
+                    fillcolor=colors[idx],
+                    line=dict(
+                        color=colors[idx],
+                        width=0.5
+                    ),
+                    hovertemplate='<b>%{fullData.name}</b><br>' +
+                                  f'{x_col}: %{{x}}<br>' +
+                                  f'{y_col}: %{{y:.2f}}<extra></extra>'
+                ))
+        
+        fig.update_layout(
+            xaxis_title=config.get('x_label', x_col.replace('_', ' ').title()),
+            yaxis_title=config.get('y_label', 'Value')
         )
         
         return self._apply_professional_styling(fig, config)

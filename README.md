@@ -6,6 +6,8 @@ A comprehensive AI-powered web application for economic researchers to create, a
 
 ### 📊 **Data Analysis**
 - **Upload Data & Create Chart**: Upload CSV/Excel files and generate charts with column selection
+- **Metadata/Stylesheet Support**: Upload JSON/YAML files to define chart styling and configuration
+- **AI Interactive Chart Builder**: Build charts using natural language prompts combined with data and metadata
 - **Upload Image & Data**: Analyze existing chart images with corresponding datasets
 - **AI-Powered Analysis**: Get insights, summaries, and answers about your charts
 
@@ -83,11 +85,17 @@ Navigate to `http://localhost:8501`
 ### 1. Upload Data & Create Chart
 1. Click **"📁 Upload Data & Create Chart"** in the left sidebar
 2. Upload your CSV/Excel file or use sample data
-3. Select X-axis (date/time) and Y-axis (numeric) columns
-4. Set date range if needed
-5. Add custom chart title (optional)
-6. Click **"🚀 Generate Chart"**
-7. Use AI tools in the right panel for analysis
+3. **(Optional)** Upload metadata/stylesheet (JSON/YAML) for styling
+4. **Option A - AI Chart Builder**:
+   - Describe your chart in natural language
+   - Click **"✨ Build Chart with AI"**
+   - AI analyzes prompt, data, and metadata to generate chart
+5. **Option B - Manual Creation**:
+   - Select X-axis (date/time) and Y-axis (numeric) columns
+   - Set date range if needed
+   - Add custom chart title (optional)
+   - Click **"🚀 Generate Chart"**
+6. Use AI tools in the right panel for analysis
 
 ### 2. Analyze Existing Charts
 1. Click **"🖼️ Upload Image & Data"** in the left sidebar
@@ -179,6 +187,14 @@ python init_db.py
 "Employment vs Inflation Correlation"
 ```
 
+### AI Chart Builder Examples
+```
+"Show GDP growth and inflation trends over time with blue and red colors"
+"Create a bar chart comparing quarterly revenue across regions"
+"Display correlation heatmap for all economic indicators"
+"Line chart of unemployment rate with annotations for policy changes"
+```
+
 ### Customization Examples
 ```
 "Change the title to 'Recent Economic Trends'"
@@ -218,8 +234,12 @@ For issues and questions:
 ## 🔄 Updates
 
 The application automatically saves all charts and configurations. Recent updates include:
+- **Metadata/Stylesheet Support**: Upload JSON/YAML files for chart styling
+- **AI Interactive Chart Builder**: Build charts using natural language prompts
 - Enhanced time series data processing
 - Smart column detection and filtering
 - Improved AI analysis reliability
 - Better chart customization options
 - Streamlined user interface
+
+For detailed metadata documentation, see [METADATA_GUIDE.md](METADATA_GUIDE.md)

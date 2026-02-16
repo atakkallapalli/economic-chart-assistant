@@ -18,9 +18,14 @@ class LLMHandler:
         
     def _get_bedrock_client(self):
         if not self.bedrock_client:
+            region = os.getenv('AWS_REGION', 'us-east-1')
+            # Use boto3's default credential chain which checks:
+            # 1. ~/.aws/credentials file
+            # 2. Environment variables
+            # 3. IAM role (if on EC2)
             self.bedrock_client = boto3.client(
                 'bedrock-runtime',
-                region_name=os.getenv('AWS_REGION', 'us-east-1')
+                region_name=region
             )
         return self.bedrock_client
     
@@ -39,15 +44,20 @@ class LLMHandler:
         user_prompt: str, 
         columns: List[str],
         data_sample: Dict,
-        provider: str = "AWS Bedrock"
+        provider: str = "AWS Bedrock",
+        metadata: Optional[Dict] = None
     ) -> Dict:
         """Interpret user's natural language request and generate chart configuration"""
+        
+        metadata_context = ""
+        if metadata:
+            metadata_context = f"\n\nMetadata/Stylesheet provided:\n{json.dumps(metadata, indent=2)}\n\nUse this metadata to guide chart styling and configuration."
         
         system_prompt = f"""You are an expert data visualization assistant for economic research.
 Given a user's request and available data columns, generate a JSON configuration for creating a chart.
 
 Available columns: {', '.join(columns)}
-Data sample: {json.dumps(data_sample, indent=2)}
+Data sample: {json.dumps(data_sample, indent=2)}{metadata_context}
 
 Return ONLY a valid JSON object with this structure:
 {{
@@ -81,6 +91,117 @@ Return ONLY a valid JSON object with this structure:
             else:
                 raise ValueError(f"Could not parse JSON from LLM response: {response}")
     
+    def build_chart_interactively(
+        self,
+        user_prompt: str,
+        data: Any,
+        provider: str = "AWS Bedrock",
+        metadata: Optional[Dict] = None,
+        reference_image: Optional[str] = None
+    ) -> Dict:
+        """Build chart configuration interactively from prompt, data, metadata, and optional reference image"""
+        
+        # Extract data info
+        columns = data.columns.tolist() if hasattr(data, 'columns') else []
+        
+        # Detect data format (wide vs long)
+        data_format = "wide"
+        component_names = []
+        if 'variable' in columns and 'value' in columns:
+            data_format = "long"
+            unique_vars = data['variable'].unique().tolist() if 'variable' in data.columns else []
+            component_names = unique_vars[:10]  # Limit to first 10
+            data_context = f"Long format: 'variable' column contains component names: {', '.join(component_names)}"
+        else:
+            data_context = f"Wide format data"
+        
+        # Add metadata component info if available
+        if metadata and 'data_configuration' in metadata and 'components' in metadata['data_configuration']:
+            meta_components = [c.get('name', '') for c in metadata['data_configuration']['components']]
+            data_context += f"\nMetadata components: {', '.join(meta_components)}"
+        
+        data_sample = data.head(5).to_dict('records') if hasattr(data, 'head') else {}
+        
+        metadata_context = ""
+        if metadata:
+            metadata_context = f"\n\nMetadata/Stylesheet:\n{json.dumps(metadata, indent=2)}"
+        
+        image_context = ""
+        if reference_image:
+            image_context = "\n\nA reference chart image has been provided showing the expected visual style and format."
+        
+        system_prompt = f"""You are an AI chart builder. Build a complete chart configuration from user prompt and data.
+
+Data columns: {', '.join(columns)}
+Data format: {data_context}
+Data sample (first 5 rows): {json.dumps(data_sample, indent=2)}{metadata_context}{image_context}
+
+IMPORTANT:
+- The 'variable' column contains COMPONENT NAMES (e.g., "Housing Services", "Other Services", "Transportation Services")
+- Each component name represents a different data series that will become a separate column after pivoting
+- For PCE decomposition charts: use stacked_area chart type to show component contributions over time
+- After data is pivoted, x_column='date' and y_columns should list the component names
+- Always ensure x_column and y_columns exist in the data after transformation
+
+Return ONLY valid JSON:
+{{
+    "chart_type": "stacked_area|line|bar|scatter|area",
+    "x_column": "date",
+    "y_columns": ["component1", "component2", ...],
+    "title": "Chart Title",
+    "x_label": "X Label",
+    "y_label": "Y Label",
+    "colors": ["#2E86AB", "#A23B72"],
+    "show_legend": true
+}}"""
+        
+        user_message = f"Build chart for: {user_prompt}"
+        
+        # If reference image provided, use vision-capable call
+        if reference_image:
+            response = self._call_llm_with_image(system_prompt, user_message, reference_image, provider)
+        else:
+            response = self._call_llm(system_prompt, user_message, provider)
+        
+        try:
+            if "```json" in response:
+                json_str = response.split("```json")[1].split("```")[0].strip()
+                config = json.loads(json_str)
+            elif "```" in response:
+                json_str = response.split("```")[1].split("```")[0].strip()
+                config = json.loads(json_str)
+            else:
+                config = json.loads(response)
+            
+            # Validate and fix config
+            if 'x_column' not in config or config['x_column'] not in columns:
+                # Auto-detect x column
+                if 'date' in columns:
+                    config['x_column'] = 'date'
+                elif len(columns) > 0:
+                    config['x_column'] = columns[0]
+            
+            if 'y_columns' not in config or not config['y_columns']:
+                # Auto-detect y columns
+                if 'value' in columns:
+                    config['y_columns'] = ['value']
+                else:
+                    numeric_cols = [c for c in columns if c != config.get('x_column')]
+                    config['y_columns'] = numeric_cols[:1] if numeric_cols else [columns[1] if len(columns) > 1 else columns[0]]
+            
+            return config
+        except Exception as e:
+            # Fallback: create basic config
+            return {
+                'chart_type': 'line',
+                'x_column': 'date' if 'date' in columns else columns[0],
+                'y_columns': ['value'] if 'value' in columns else [columns[1] if len(columns) > 1 else columns[0]],
+                'title': user_prompt[:50],
+                'x_label': 'Date',
+                'y_label': 'Value',
+                'show_legend': True
+            }
+    
     def interpret_edit_request(
         self,
         edit_prompt: str,
@@ -90,44 +211,50 @@ Return ONLY a valid JSON object with this structure:
     ) -> Dict:
         """Interpret edit request and update chart configuration with data context"""
         
-        data_context = ""
-        if chart_data is not None:
-            try:
-                if hasattr(chart_data, 'columns'):
-                    data_context += f"\nAvailable data columns: {', '.join(chart_data.columns.tolist())}"
-                if hasattr(chart_data, 'dtypes'):
-                    numeric_cols = chart_data.select_dtypes(include='number').columns.tolist()
-                    data_context += f"\nNumeric columns: {', '.join(numeric_cols)}"
-            except Exception:
-                pass
-        
-        system_prompt = f"""You are an expert at modifying chart configurations based on user requests.
+        try:
+            data_context = ""
+            if chart_data is not None:
+                try:
+                    if hasattr(chart_data, 'columns'):
+                        data_context += f"\nAvailable data columns: {', '.join(chart_data.columns.tolist())}"
+                    if hasattr(chart_data, 'dtypes'):
+                        numeric_cols = chart_data.select_dtypes(include='number').columns.tolist()
+                        data_context += f"\nNumeric columns: {', '.join(numeric_cols)}"
+                except Exception:
+                    pass
+            
+            system_prompt = f"""You are an expert at modifying chart configurations based on user requests.
 Given the current configuration and an edit request, return the updated configuration.
 {data_context}
 
 Return ONLY a valid JSON object with the complete updated configuration."""
-        
-        user_message = f"""Current configuration:
+            
+            user_message = f"""Current configuration:
 {json.dumps(current_config, indent=2)}
 
 Edit request: {edit_prompt}
 
 Return the complete updated configuration as JSON."""
-        
-        response = self._call_llm(system_prompt, user_message, provider)
-        
-        try:
-            config = json.loads(response)
-            return config
-        except json.JSONDecodeError:
-            if "```json" in response:
-                json_str = response.split("```json")[1].split("```")[0].strip()
-                return json.loads(json_str)
-            elif "```" in response:
-                json_str = response.split("```")[1].split("```")[0].strip()
-                return json.loads(json_str)
-            else:
-                raise ValueError(f"Could not parse JSON from LLM response: {response}")
+            
+            response = self._call_llm(system_prompt, user_message, provider)
+            
+            if not response:
+                raise ValueError("LLM returned empty response")
+            
+            try:
+                config = json.loads(response)
+                return config
+            except json.JSONDecodeError:
+                if "```json" in response:
+                    json_str = response.split("```json")[1].split("```")[0].strip()
+                    return json.loads(json_str)
+                elif "```" in response:
+                    json_str = response.split("```")[1].split("```")[0].strip()
+                    return json.loads(json_str)
+                else:
+                    raise ValueError(f"Could not parse JSON from LLM response: {response[:200]}")
+        except Exception as e:
+            raise Exception(f"Edit request failed: {str(e)}")
     
     def generate_summary(
         self,
@@ -290,27 +417,30 @@ Please analyze these charts and provide a comprehensive answer to the question."
     
     def _call_bedrock(self, system_prompt: str, user_message: str) -> str:
         """Call AWS Bedrock Claude"""
-        client = self._get_bedrock_client()
-        
-        payload = {
-            "anthropic_version": "bedrock-2023-05-31",
-            "max_tokens": 4000,
-            "system": system_prompt,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": user_message
-                }
-            ]
-        }
-        
-        response = client.invoke_model(
-            modelId='anthropic.claude-3-sonnet-20240229-v1:0',
-            body=json.dumps(payload)
-        )
-        
-        response_body = json.loads(response['body'].read())
-        return response_body['content'][0]['text']
+        try:
+            client = self._get_bedrock_client()
+            
+            payload = {
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": 4000,
+                "system": system_prompt,
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": user_message
+                    }
+                ]
+            }
+            
+            response = client.invoke_model(
+                modelId='anthropic.claude-3-sonnet-20240229-v1:0',
+                body=json.dumps(payload)
+            )
+            
+            response_body = json.loads(response['body'].read())
+            return response_body['content'][0]['text']
+        except Exception as e:
+            raise Exception(f"Bedrock API error: {str(e)}")
     
     def _call_anthropic(self, system_prompt: str, user_message: str) -> str:
         """Call Anthropic API directly"""
@@ -339,6 +469,118 @@ Please analyze these charts and provide a comprehensive answer to the question."
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message}
+            ],
+            max_tokens=4000
+        )
+        
+        return response.choices[0].message.content
+    
+    def _call_llm_with_image(self, system_prompt: str, user_message: str, image_base64: str, provider: str) -> str:
+        """Call LLM with image support for reference chart"""
+        
+        if provider == "AWS Bedrock":
+            return self._call_bedrock_with_image(system_prompt, user_message, image_base64)
+        elif provider == "Anthropic":
+            return self._call_anthropic_with_image(system_prompt, user_message, image_base64)
+        elif provider == "OpenAI":
+            return self._call_openai_with_image(system_prompt, user_message, image_base64)
+        else:
+            raise ValueError(f"Unknown provider: {provider}")
+    
+    def _call_bedrock_with_image(self, system_prompt: str, user_message: str, image_base64: str) -> str:
+        """Call AWS Bedrock Claude with image"""
+        try:
+            client = self._get_bedrock_client()
+            
+            payload = {
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": 4000,
+                "system": system_prompt,
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image",
+                                "source": {
+                                    "type": "base64",
+                                    "media_type": "image/png",
+                                    "data": image_base64
+                                }
+                            },
+                            {
+                                "type": "text",
+                                "text": user_message
+                            }
+                        ]
+                    }
+                ]
+            }
+            
+            response = client.invoke_model(
+                modelId='anthropic.claude-3-sonnet-20240229-v1:0',
+                body=json.dumps(payload)
+            )
+            
+            response_body = json.loads(response['body'].read())
+            return response_body['content'][0]['text']
+        except Exception as e:
+            raise Exception(f"Bedrock API error: {str(e)}")
+    
+    def _call_anthropic_with_image(self, system_prompt: str, user_message: str, image_base64: str) -> str:
+        """Call Anthropic API with image"""
+        client = self._get_anthropic_client()
+        
+        message = client.messages.create(
+            model="claude-3-sonnet-20240229",
+            max_tokens=4000,
+            system=system_prompt,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/png",
+                                "data": image_base64
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "text": user_message
+                        }
+                    ]
+                }
+            ]
+        )
+        
+        return message.content[0].text
+    
+    def _call_openai_with_image(self, system_prompt: str, user_message: str, image_base64: str) -> str:
+        """Call OpenAI API with image"""
+        client = self._get_openai_client()
+        
+        response = client.chat.completions.create(
+            model="gpt-4-vision-preview",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{image_base64}"
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "text": user_message
+                        }
+                    ]
+                }
             ],
             max_tokens=4000
         )
