@@ -1,0 +1,292 @@
+{
+  "chart_identity": {
+    "chart_id": "06_supercore_decomp",
+    "chart_type": "stacked_bar_chart",
+    "title": "Contributions to Supercore PCE Inflation",
+    "subtitle": "Percentage Points (pp)",
+    "description": "Decomposition of supercore PCE inflation showing contributions of key service categories",
+    "version": "1.0",
+    "created_by": "Federal Reserve Economic Analysis Team",
+    "last_updated": "2023-12-15"
+  },
+  "data_configuration": {
+    "data_source": {
+      "primary_source": "Bureau of Economic Analysis",
+      "dataset": "Personal Consumption Expenditures",
+      "frequency": "Monthly",
+      "seasonally_adjusted": true,
+      "transformation": "Year-over-Year Percentage Change"
+    },
+    "components": [
+      {
+        "id": "financial_services",
+        "name": "Financial Services & Insurance",
+        "order": 1,
+        "color": "#ffd966",
+        "description": "Financial services including banking, investment services, and insurance"
+      },
+      {
+        "id": "health_care",
+        "name": "Health Care",
+        "order": 2,
+        "color": "#a8d08d",
+        "description": "Medical care services including hospital, physician, dental services, and health insurance"
+      },
+      {
+        "id": "food_services",
+        "name": "Food Services & Accommodations",
+        "order": 3,
+        "color": "#4472c4",
+        "description": "Food services and accommodations including restaurants, cafeterias, and hotels"
+      },
+      {
+        "id": "transportation_services",
+        "name": "Transportation Services",
+        "order": 4,
+        "color": "#ed7d31",
+        "description": "Transportation services including motor vehicle maintenance, public transportation, and delivery services"
+      },
+      {
+        "id": "other_services",
+        "name": "Other Services",
+        "order": 5,
+        "color": "#636363",
+        "description": "All other service categories including housing services and remaining service categories"
+      }
+    ]
+  },
+  "visual_style": {
+    "dimensions": {
+      "width": 1200,
+      "height": 600,
+      "dpi": 300,
+      "aspect_ratio": 2.0
+    },
+    "fonts": {
+      "title": {
+        "family": "Arial",
+        "size": 16,
+        "weight": "bold"
+      },
+      "subtitle": {
+        "family": "Arial",
+        "size": 14,
+        "weight": "normal"
+      },
+      "axis_labels": {
+        "family": "Arial",
+        "size": 12,
+        "weight": "normal"
+      },
+      "tick_labels": {
+        "family": "Arial",
+        "size": 10,
+        "weight": "normal"
+      },
+      "legend": {
+        "family": "Arial",
+        "size": 10,
+        "weight": "normal"
+      },
+      "annotations": {
+        "family": "Arial",
+        "size": 10,
+        "weight": "normal",
+        "italic": false
+      }
+    },
+    "colors": {
+      "background": "#ffffff",
+      "grid": "#e5e5e5",
+      "zero_line": "#000000",
+      "annotation": "#000000"
+    },
+    "layout": {
+      "margin_top": 0.1,
+      "margin_right": 0.1,
+      "margin_bottom": 0.15,
+      "margin_left": 0.1,
+      "title_spacing": 0.02,
+      "legend_location": "bottom"
+    }
+  },
+  "axes_configuration": {
+    "x_axis": {
+      "type": "date",
+      "label": "",
+      "limit": {
+        "min": "2023-01-01",
+        "max": "2026-02-01"
+      },
+      "tick_format": "%Y",
+      "tick_interval": "1Y",
+      "grid": false
+    },
+    "y_axis": {
+      "label": "",
+      "position": "left",
+      "limit": {
+        "min": 0,
+        "max": 6
+      },
+      "tick_interval": 1.0,
+      "tick_format": "{:.0f} pp",
+      "grid": false,
+      "zero_line": true,
+      "zero_line_width": 1.0
+    }
+  },
+  "annotations_features": {
+    "annotations": [
+      {
+        "type": "text",
+        "text": "Pre-pandemic\nContributions",
+        "x_position": "2026-01-01",
+        "y_position": 3.5,
+        "color": "#000000",
+        "font_weight": "bold",
+        "font_size": 10
+      }
+    ],
+    "reference_values": [
+      {
+        "component": "financial_services",
+        "value": 0.6,
+        "label": "0.6"
+      },
+      {
+        "component": "health_care",
+        "value": 0.6,
+        "label": "0.6"
+      },
+      {
+        "component": "food_services",
+        "value": 0.5,
+        "label": "0.5"
+      },
+      {
+        "component": "transportation_services",
+        "value": 0.2,
+        "label": "0.2"
+      },
+      {
+        "component": "other_services",
+        "value": 0.8,
+        "label": "0.8"
+      }
+    ],
+    "vertical_line": {
+      "enabled": true,
+      "position": "2026-01-01",
+      "style": "solid",
+      "width": 2,
+      "color": "#000000"
+    }
+  },
+  "legend_configuration": {
+    "show": true,
+    "location": "bottom",
+    "frame": false,
+    "columns": 5,
+    "font_size": 10,
+    "marker_scale": 1.0,
+    "label_spacing": 0.5
+  },
+  "data_schema": {
+    "date": {
+      "type": "date",
+      "format": "%Y-%m-%d",
+      "role": "index"
+    },
+    "financial_services_contribution": {
+      "type": "float",
+      "unit": "percentage_points",
+      "description": "Contribution of financial services & insurance to supercore inflation"
+    },
+    "health_care_contribution": {
+      "type": "float",
+      "unit": "percentage_points",
+      "description": "Contribution of health care services to supercore inflation"
+    },
+    "food_services_contribution": {
+      "type": "float",
+      "unit": "percentage_points",
+      "description": "Contribution of food services & accommodations to supercore inflation"
+    },
+    "transportation_services_contribution": {
+      "type": "float",
+      "unit": "percentage_points",
+      "description": "Contribution of transportation services to supercore inflation"
+    },
+    "other_services_contribution": {
+      "type": "float",
+      "unit": "percentage_points",
+      "description": "Contribution of other services to supercore inflation"
+    },
+    "total_contribution": {
+      "type": "float",
+      "unit": "percentage_points",
+      "description": "Total supercore PCE inflation",
+      "calculation": "sum of all component contributions"
+    }
+  },
+  "key_insights": {
+    "primary_message": "The chart shows the projected decomposition of supercore PCE inflation from 2023 through early 2026, with pre-pandemic contribution levels shown as reference points",
+    "notable_patterns": [
+      "Total supercore PCE inflation shows a gradual decline from about 5 percentage points in early 2023 to around 3 percentage points by 2026",
+      "Other Services (which includes housing) consistently make the largest contribution to inflation",
+      "Financial Services & Insurance contributions increase over time as a share of total inflation",
+      "Health Care contributions remain significant throughout the projection period",
+      "Food Services & Transportation Services contributions decline relative to their 2023 levels"
+    ],
+    "policy_relevance": "The projection shows inflation gradually converging toward pre-pandemic levels, but remaining above those levels through early 2026, suggesting persistent inflationary pressures in service categories."
+  },
+  "economic_context": {
+    "time_period": "Forecast period (2023-2026)",
+    "related_indicators": [
+      "Core PCE inflation",
+      "Services inflation",
+      "Goods inflation",
+      "Wage growth",
+      "Unit labor costs"
+    ]
+  },
+  "interpretation_guidance": {
+    "reading_the_chart": "Each colored bar segment represents the contribution of a service category to overall supercore PCE inflation, measured in percentage points. The stacked bars sum to the total supercore PCE inflation. The vertical line and values at 2026 represent pre-pandemic contribution levels for comparison.",
+    "key_comparisons": [
+      "Compare projected 2026 values with the pre-pandemic contribution levels shown at the far right",
+      "Note the changing composition of services inflation over time",
+      "Observe the persistence of inflation across service categories"
+    ],
+    "limitations": "This chart shows a forecast/projection and actual results may differ. The categorization groups many detailed subcomponents into broader categories."
+  },
+  "code_implementation": {
+    "main_function": "generate_supercore_decomp_chart",
+    "source_file": "06_supercore_decomp.py",
+    "key_functions": [
+      {
+        "name": "calculate_contributions",
+        "description": "Calculate component contributions to total inflation"
+      },
+      {
+        "name": "plot_stacked_bars",
+        "description": "Create the stacked bar chart visualization"
+      },
+      {
+        "name": "add_reference_values",
+        "description": "Add pre-pandemic reference values"
+      },
+      {
+        "name": "add_annotations",
+        "description": "Add text annotations to identify components"
+      }
+    ]
+  },
+  "output_configuration": {
+    "primary_format": "png",
+    "additional_formats": ["pdf", "svg"],
+    "file_naming": "06_supercore_decomp.png",
+    "output_path": "../figures/"
+  },
+  
+}
