@@ -1,0 +1,380 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-04-02T00:00:00.000Z" agent="Kiro" version="24.0.0" type="device">
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- C4 Level 1: System Context Diagram                          -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <diagram id="c4-context" name="C4 Level 1 - System Context">
+    <mxGraphModel dx="1422" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Title -->
+        <mxCell id="ctx-title" value="C4 Level 1 — System Context Diagram: ER-CHAI" style="text;html=1;fontSize=20;fontStyle=1;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontColor=#003B5C;" vertex="1" parent="1">
+          <mxGeometry x="300" y="10" width="800" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Person: Economist ═══ -->
+        <mxCell id="economist" value="&lt;b&gt;Economist / Researcher&lt;/b&gt;&lt;br&gt;&lt;br&gt;[Person]&lt;br&gt;&lt;br&gt;Creates, customizes, and exports&lt;br&gt;FRBSF-branded economic charts&lt;br&gt;using AI-assisted tools" style="shape=mxgraph.c4.person2;whiteSpace=wrap;html=1;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];fillColor=#08427B;fontColor=#ffffff;strokeColor=#073B6F;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="120" y="280" width="200" height="180" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ System: ER-CHAI ═══ -->
+        <mxCell id="erchai" value="&lt;b&gt;ER-CHAI Platform&lt;/b&gt;&lt;br&gt;&lt;br&gt;[Software System]&lt;br&gt;&lt;br&gt;AI-assisted chart generation and&lt;br&gt;analysis platform for economic&lt;br&gt;research. Ingests data, renders&lt;br&gt;interactive charts, provides AI&lt;br&gt;chat, generates summaries,&lt;br&gt;and exports to Python/R/PDF." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#438DD5;fontColor=#ffffff;strokeColor=#3C7FC0;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="530" y="240" width="280" height="260" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ External: FRED API ═══ -->
+        <mxCell id="fred-ext" value="&lt;b&gt;FRED API&lt;/b&gt;&lt;br&gt;&lt;br&gt;[External System]&lt;br&gt;&lt;br&gt;Federal Reserve Economic Data.&lt;br&gt;Provides economic time series&lt;br&gt;datasets via REST API." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=#8A8A8A;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="100" width="240" height="180" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ External: AWS Bedrock ═══ -->
+        <mxCell id="bedrock-ext" value="&lt;b&gt;AWS Bedrock&lt;/b&gt;&lt;br&gt;(Claude Sonnet 4.5)&lt;br&gt;&lt;br&gt;[External System]&lt;br&gt;&lt;br&gt;Managed LLM service.&lt;br&gt;Provides AI chat, vision&lt;br&gt;analysis, and summary&lt;br&gt;generation capabilities." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=#8A8A8A;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="370" width="240" height="200" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ External: Okta ═══ -->
+        <mxCell id="okta-ext" value="&lt;b&gt;Okta IdP&lt;/b&gt;&lt;br&gt;&lt;br&gt;[External System]&lt;br&gt;&lt;br&gt;Identity provider for&lt;br&gt;SSO authentication&lt;br&gt;(SAML / OIDC)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=#8A8A8A;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="640" width="240" height="160" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Connections ═══ -->
+        <mxCell id="ctx-e1" value="Uses [HTTPS]&lt;br&gt;Creates charts, asks AI questions,&lt;br&gt;exports publications" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=2;fontColor=#707070;fontSize=10;entryX=0;entryY=0.5;" edge="1" source="economist" target="erchai" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="ctx-e2" value="Downloads economic&lt;br&gt;datasets [REST/JSON]" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=2;fontColor=#707070;fontSize=10;dashed=1;" edge="1" source="erchai" target="fred-ext" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="ctx-e3" value="AI chat, vision analysis,&lt;br&gt;summary generation [REST/JSON]" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=2;fontColor=#707070;fontSize=10;dashed=1;" edge="1" source="erchai" target="bedrock-ext" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="ctx-e4" value="Authenticates users&lt;br&gt;[SAML/OIDC]" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=2;fontColor=#707070;fontSize=10;dashed=1;" edge="1" source="erchai" target="okta-ext" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- C4 Level 2: Container Diagram                               -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <diagram id="c4-container" name="C4 Level 2 - Container">
+    <mxGraphModel dx="1800" dy="1100" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Title -->
+        <mxCell id="cnt-title" value="C4 Level 2 — Container Diagram: ER-CHAI Platform" style="text;html=1;fontSize=20;fontStyle=1;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontColor=#003B5C;" vertex="1" parent="1">
+          <mxGeometry x="350" y="10" width="900" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Person ═══ -->
+        <mxCell id="c-user" value="&lt;b&gt;Economist&lt;/b&gt;&lt;br&gt;[Person]" style="shape=mxgraph.c4.person2;whiteSpace=wrap;html=1;align=center;fillColor=#08427B;fontColor=#ffffff;strokeColor=#073B6F;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="350" width="140" height="130" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ System Boundary ═══ -->
+        <mxCell id="sys-boundary" value="ER-CHAI Platform [Software System]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#438DD5;strokeWidth=2;dashed=1;fontSize=14;fontStyle=1;fontColor=#438DD5;verticalAlign=top;align=left;spacingLeft=10;spacingTop=5;" vertex="1" parent="1">
+          <mxGeometry x="250" y="60" width="960" height="870" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Container: React SPA ═══ -->
+        <mxCell id="c-spa" value="&lt;b&gt;React SPA&lt;/b&gt;&lt;br&gt;&lt;br&gt;[Container: React 18, TypeScript,&lt;br&gt;Konva.js, Zustand]&lt;br&gt;&lt;br&gt;Interactive chart editor with&lt;br&gt;AI chat, drag-and-drop canvas,&lt;br&gt;controls panel, and export tools.&lt;br&gt;&lt;br&gt;Hosted on S3 + CloudFront" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#438DD5;fontColor=#ffffff;strokeColor=#3C7FC0;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="310" y="100" width="260" height="220" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Container: FastAPI Backend ═══ -->
+        <mxCell id="c-api" value="&lt;b&gt;FastAPI Backend&lt;/b&gt;&lt;br&gt;&lt;br&gt;[Container: Python 3.11, FastAPI,&lt;br&gt;uvicorn, ECS Fargate]&lt;br&gt;&lt;br&gt;REST API handling data ingestion,&lt;br&gt;AI chat routing, summary generation,&lt;br&gt;export generation, and project CRUD.&lt;br&gt;15+ endpoints under /api/*" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#438DD5;fontColor=#ffffff;strokeColor=#3C7FC0;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="310" y="420" width="260" height="230" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Container: Aurora DB ═══ -->
+        <mxCell id="c-db" value="&lt;b&gt;Aurora PostgreSQL&lt;/b&gt;&lt;br&gt;Serverless v2&lt;br&gt;&lt;br&gt;[Container: Database]&lt;br&gt;&lt;br&gt;Stores projects, chart state&lt;br&gt;(JSON), metadata, timestamps" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#438DD5;fontColor=#ffffff;strokeColor=#3C7FC0;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="680" y="100" width="220" height="180" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Container: S3 Storage ═══ -->
+        <mxCell id="c-s3" value="&lt;b&gt;S3 Data Store&lt;/b&gt;&lt;br&gt;&lt;br&gt;[Container: Object Storage]&lt;br&gt;&lt;br&gt;Datasets (CSV/Excel),&lt;br&gt;chart images, export&lt;br&gt;artifacts (zip, PDF)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#438DD5;fontColor=#ffffff;strokeColor=#3C7FC0;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="680" y="350" width="220" height="170" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Container: Redis Cache ═══ -->
+        <mxCell id="c-redis" value="&lt;b&gt;ElastiCache (Redis)&lt;/b&gt;&lt;br&gt;&lt;br&gt;[Container: Cache]&lt;br&gt;&lt;br&gt;AI session history,&lt;br&gt;prompt caching,&lt;br&gt;rate limiting" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#438DD5;fontColor=#ffffff;strokeColor=#3C7FC0;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="680" y="590" width="220" height="160" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Container: SQS Queue ═══ -->
+        <mxCell id="c-sqs" value="&lt;b&gt;SQS Queue&lt;/b&gt;&lt;br&gt;&lt;br&gt;[Container: Message Queue]&lt;br&gt;&lt;br&gt;Async processing for&lt;br&gt;image analysis and&lt;br&gt;PDF/export generation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#438DD5;fontColor=#ffffff;strokeColor=#3C7FC0;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="680" y="810" width="220" height="100" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Container: ALB ═══ -->
+        <mxCell id="c-alb" value="&lt;b&gt;ALB + WAF&lt;/b&gt;&lt;br&gt;&lt;br&gt;[Container: Load Balancer]&lt;br&gt;&lt;br&gt;OIDC auth via Okta,&lt;br&gt;WAF rules, routing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#438DD5;fontColor=#ffffff;strokeColor=#3C7FC0;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="310" y="730" width="260" height="130" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ External Systems ═══ -->
+        <mxCell id="c-okta" value="&lt;b&gt;Okta IdP&lt;/b&gt;&lt;br&gt;[External: SAML/OIDC]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=#8A8A8A;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="100" width="180" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="c-bedrock" value="&lt;b&gt;AWS Bedrock&lt;/b&gt;&lt;br&gt;Claude Sonnet 4.5&lt;br&gt;[External: LLM + Vision]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=#8A8A8A;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="250" width="180" height="90" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="c-fred" value="&lt;b&gt;FRED API&lt;/b&gt;&lt;br&gt;[External: REST API]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=#8A8A8A;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="410" width="180" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="c-cw" value="&lt;b&gt;CloudWatch + X-Ray&lt;/b&gt;&lt;br&gt;[External: Observability]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=#8A8A8A;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="550" width="180" height="70" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Connections ═══ -->
+        <!-- User → SPA -->
+        <mxCell id="ce1" value="Uses [HTTPS]" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=2;fontColor=#707070;fontSize=10;" edge="1" source="c-user" target="c-spa" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- SPA → API -->
+        <mxCell id="ce2" value="REST API calls&lt;br&gt;[JSON/HTTPS]" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=2;fontColor=#707070;fontSize=10;" edge="1" source="c-spa" target="c-api" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- API → DB -->
+        <mxCell id="ce3" value="Project CRUD&lt;br&gt;[SQL]" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=1;fontColor=#707070;fontSize=9;" edge="1" source="c-api" target="c-db" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- API → S3 -->
+        <mxCell id="ce4" value="Store/retrieve&lt;br&gt;datasets &amp; exports" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=1;fontColor=#707070;fontSize=9;" edge="1" source="c-api" target="c-s3" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- API → Redis -->
+        <mxCell id="ce5" value="Sessions &amp;&lt;br&gt;prompt cache" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=1;fontColor=#707070;fontSize=9;" edge="1" source="c-api" target="c-redis" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- API → SQS -->
+        <mxCell id="ce6" value="Enqueue async jobs" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=1;fontColor=#707070;fontSize=9;" edge="1" source="c-api" target="c-sqs" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ALB → API -->
+        <mxCell id="ce7" value="Routes /api/*" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=2;fontColor=#707070;fontSize=10;" edge="1" source="c-alb" target="c-api" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ALB → Okta -->
+        <mxCell id="ce8" value="OIDC Auth" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=1;fontColor=#707070;fontSize=9;dashed=1;" edge="1" source="c-alb" target="c-okta" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- API → Bedrock -->
+        <mxCell id="ce9" value="AI Chat, Vision,&lt;br&gt;Summaries" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=2;fontColor=#707070;fontSize=10;dashed=1;" edge="1" source="c-api" target="c-bedrock" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- API → FRED -->
+        <mxCell id="ce10" value="Download series" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=1;fontColor=#707070;fontSize=9;dashed=1;" edge="1" source="c-api" target="c-fred" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- API → CloudWatch -->
+        <mxCell id="ce11" value="Logs, metrics, traces" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=1;fontColor=#707070;fontSize=9;dashed=1;" edge="1" source="c-api" target="c-cw" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <!-- C4 Level 3: Component Diagram (Backend)                     -->
+  <!-- ════════════════════════════════════════════════════════════ -->
+  <diagram id="c4-component" name="C4 Level 3 - Component (Backend)">
+    <mxGraphModel dx="1800" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Title -->
+        <mxCell id="cmp-title" value="C4 Level 3 — Component Diagram: FastAPI Backend" style="text;html=1;fontSize=20;fontStyle=1;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontColor=#003B5C;" vertex="1" parent="1">
+          <mxGeometry x="350" y="10" width="900" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Container Boundary ═══ -->
+        <mxCell id="api-boundary" value="FastAPI Backend [Container: Python 3.11, ECS Fargate]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#438DD5;strokeWidth=2;dashed=1;fontSize=14;fontStyle=1;fontColor=#438DD5;verticalAlign=top;align=left;spacingLeft=10;spacingTop=5;" vertex="1" parent="1">
+          <mxGeometry x="200" y="60" width="1200" height="980" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Component: API Router ═══ -->
+        <mxCell id="k-router" value="&lt;b&gt;API Router&lt;/b&gt;&lt;br&gt;&lt;br&gt;[Component: FastAPI Router]&lt;br&gt;&lt;br&gt;15+ REST endpoints under /api/*.&lt;br&gt;Routes requests to services.&lt;br&gt;Health check, Bedrock status." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;fontColor=#000000;strokeColor=#78A8D8;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="250" y="100" width="240" height="160" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Component: Middleware ═══ -->
+        <mxCell id="k-mw" value="&lt;b&gt;Error Handling&lt;br&gt;Middleware&lt;/b&gt;&lt;br&gt;&lt;br&gt;[Component]&lt;br&gt;&lt;br&gt;Structured JSON errors,&lt;br&gt;12+ error types,&lt;br&gt;HTTP status mapping" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;fontColor=#000000;strokeColor=#78A8D8;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="250" y="320" width="240" height="150" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Component: Config Loader ═══ -->
+        <mxCell id="k-cfg" value="&lt;b&gt;Config Loader&lt;/b&gt;&lt;br&gt;&lt;br&gt;[Component: config.py]&lt;br&gt;&lt;br&gt;Loads YAML config at startup.&lt;br&gt;Validates API keys and&lt;br&gt;AWS credentials." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;fontColor=#000000;strokeColor=#78A8D8;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="250" y="530" width="240" height="140" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Component: Data Ingestion Service ═══ -->
+        <mxCell id="k-ingest" value="&lt;b&gt;Data Ingestion Service&lt;/b&gt;&lt;br&gt;&lt;br&gt;[Component: ingestion.py]&lt;br&gt;&lt;br&gt;Orchestrates FRED download,&lt;br&gt;CSV/Excel parsing, long-format&lt;br&gt;pivot, image analysis, and&lt;br&gt;default chart spec generation.&lt;br&gt;FRBSF branding defaults." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;fontColor=#000000;strokeColor=#78A8D8;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="580" y="100" width="240" height="200" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Component: FRED Client ═══ -->
+        <mxCell id="k-fred" value="&lt;b&gt;FRED Client&lt;/b&gt;&lt;br&gt;&lt;br&gt;[Component: fred_client.py]&lt;br&gt;&lt;br&gt;Downloads FRED series.&lt;br&gt;URL parsing, retry logic&lt;br&gt;(3 attempts, exp backoff)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;fontColor=#000000;strokeColor=#78A8D8;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="580" y="360" width="240" height="150" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Component: Image Analyzer ═══ -->
+        <mxCell id="k-img" value="&lt;b&gt;Image Analyzer&lt;/b&gt;&lt;br&gt;&lt;br&gt;[Component: image_analyzer.py]&lt;br&gt;&lt;br&gt;Dual pipeline: OpenCV (colors,&lt;br&gt;contours, text regions) +&lt;br&gt;Bedrock Vision (20-field&lt;br&gt;comprehensive analysis).&lt;br&gt;Merges into ChartSpecification." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;fontColor=#000000;strokeColor=#78A8D8;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="580" y="570" width="240" height="200" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Component: AI Assistant ═══ -->
+        <mxCell id="k-ai" value="&lt;b&gt;AI Assistant Handler&lt;/b&gt;&lt;br&gt;&lt;br&gt;[Component: ai_assistant.py]&lt;br&gt;&lt;br&gt;3 intents: chart_modify,&lt;br&gt;data_qa, summary_update.&lt;br&gt;Per-session conversation&lt;br&gt;history. Bedrock invocation&lt;br&gt;with retry (2 attempts)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;fontColor=#000000;strokeColor=#78A8D8;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="920" y="100" width="240" height="200" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Component: Summary Generator ═══ -->
+        <mxCell id="k-sum" value="&lt;b&gt;Summary Generator&lt;/b&gt;&lt;br&gt;&lt;br&gt;[Component: summary_generator.py]&lt;br&gt;&lt;br&gt;Generates executive summaries:&lt;br&gt;trend analysis, peaks/troughs,&lt;br&gt;predictions, economist perspective.&lt;br&gt;Bedrock with retry." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;fontColor=#000000;strokeColor=#78A8D8;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="920" y="360" width="240" height="180" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Component: Export Service ═══ -->
+        <mxCell id="k-exp" value="&lt;b&gt;Export Service&lt;/b&gt;&lt;br&gt;&lt;br&gt;[Component: export_service.py]&lt;br&gt;&lt;br&gt;Python (matplotlib zip),&lt;br&gt;R (ggplot2 zip),&lt;br&gt;PDF (ReportLab, 300 DPI chart&lt;br&gt;+ FRBSF-branded summary)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;fontColor=#000000;strokeColor=#78A8D8;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="920" y="600" width="240" height="180" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Component: Project Store ═══ -->
+        <mxCell id="k-ps" value="&lt;b&gt;Project Store&lt;/b&gt;&lt;br&gt;&lt;br&gt;[Component: project_store.py]&lt;br&gt;&lt;br&gt;Async CRUD on Aurora.&lt;br&gt;UUID project IDs, JSON&lt;br&gt;chart state blobs." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;fontColor=#000000;strokeColor=#78A8D8;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="250" y="730" width="240" height="150" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Component: Schemas ═══ -->
+        <mxCell id="k-schema" value="&lt;b&gt;Pydantic Schemas&lt;/b&gt;&lt;br&gt;&lt;br&gt;[Component: schemas.py]&lt;br&gt;&lt;br&gt;30+ data models: ChartState,&lt;br&gt;SeriesConfig, AnnotationConfig,&lt;br&gt;AIResponse, ChartConfigDelta,&lt;br&gt;IngestionResult, etc." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;fontColor=#000000;strokeColor=#78A8D8;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="580" y="830" width="240" height="160" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ External references ═══ -->
+        <mxCell id="ext-db" value="&lt;b&gt;Aurora PostgreSQL&lt;/b&gt;&lt;br&gt;[Database]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=#8A8A8A;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="30" y="750" width="160" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="ext-s3" value="&lt;b&gt;S3 Data Store&lt;/b&gt;&lt;br&gt;[Object Storage]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=#8A8A8A;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="30" y="550" width="160" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="ext-bedrock" value="&lt;b&gt;AWS Bedrock&lt;/b&gt;&lt;br&gt;Claude Sonnet 4.5" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=#8A8A8A;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="250" width="160" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="ext-fred2" value="&lt;b&gt;FRED API&lt;/b&gt;&lt;br&gt;[External]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=#8A8A8A;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="420" width="160" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="ext-redis2" value="&lt;b&gt;ElastiCache&lt;/b&gt;&lt;br&gt;[Redis]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=#8A8A8A;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="550" width="160" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="ext-spa2" value="&lt;b&gt;React SPA&lt;/b&gt;&lt;br&gt;[Frontend]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#999999;fontColor=#ffffff;strokeColor=#8A8A8A;align=center;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="30" y="150" width="160" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- ═══ Internal Connections ═══ -->
+        <!-- Router → Ingestion -->
+        <mxCell id="ke1" value="POST /api/ingest/*" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=1;fontColor=#707070;fontSize=9;" edge="1" source="k-router" target="k-ingest" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Router → AI Assistant -->
+        <mxCell id="ke2" value="POST /api/ai/chat" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=1;fontColor=#707070;fontSize=9;" edge="1" source="k-router" target="k-ai" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Router → Summary -->
+        <mxCell id="ke3" value="POST /api/summary" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=1;fontColor=#707070;fontSize=9;" edge="1" source="k-router" target="k-sum" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Router → Export -->
+        <mxCell id="ke4" value="GET /api/export/*" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=1;fontColor=#707070;fontSize=9;" edge="1" source="k-router" target="k-exp" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Router → Project Store -->
+        <mxCell id="ke5" value="CRUD /api/projects" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=1;fontColor=#707070;fontSize=9;" edge="1" source="k-router" target="k-ps" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Ingestion → FRED Client -->
+        <mxCell id="ke6" value="Download series" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=1;fontColor=#707070;fontSize=9;" edge="1" source="k-ingest" target="k-fred" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Ingestion → Image Analyzer -->
+        <mxCell id="ke7" value="Analyze ref image" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=1;fontColor=#707070;fontSize=9;" edge="1" source="k-ingest" target="k-img" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- External connections -->
+        <!-- SPA → Router -->
+        <mxCell id="ke8" value="REST API" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=2;fontColor=#707070;fontSize=10;" edge="1" source="ext-spa2" target="k-router" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- AI → Bedrock -->
+        <mxCell id="ke9" value="LLM calls" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=1;fontColor=#707070;fontSize=9;dashed=1;" edge="1" source="k-ai" target="ext-bedrock" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Summary → Bedrock -->
+        <mxCell id="ke10" value="LLM calls" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=1;fontColor=#707070;fontSize=9;dashed=1;" edge="1" source="k-sum" target="ext-bedrock" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Image → Bedrock -->
+        <mxCell id="ke11" value="Vision API" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=1;fontColor=#707070;fontSize=9;dashed=1;" edge="1" source="k-img" target="ext-bedrock" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- FRED Client → FRED API -->
+        <mxCell id="ke12" value="REST" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=1;fontColor=#707070;fontSize=9;dashed=1;" edge="1" source="k-fred" target="ext-fred2" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Project Store → Aurora -->
+        <mxCell id="ke13" value="SQL" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=1;fontColor=#707070;fontSize=9;" edge="1" source="k-ps" target="ext-db" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Ingestion → S3 -->
+        <mxCell id="ke14" value="Store datasets" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=1;fontColor=#707070;fontSize=9;" edge="1" source="k-ingest" target="ext-s3" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- AI → Redis -->
+        <mxCell id="ke15" value="Session cache" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#707070;strokeWidth=1;fontColor=#707070;fontSize=9;" edge="1" source="k-ai" target="ext-redis2" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+</mxfile>
